@@ -94,6 +94,8 @@ let speechSynthesis = window.speechSynthesis;
 let currentUtterance = null;
 let isReading = false;
 let currentText = '';
+let voices = [];
+let voicesLoaded = false;
 
 const audioToggle = document.getElementById('audioToggle');
 const audioPlayer = document.getElementById('audioPlayer');
@@ -102,6 +104,21 @@ const stopBtn = document.getElementById('stopBtn');
 const audioClose = document.getElementById('audioClose');
 const audioStatus = document.getElementById('audioStatus');
 const audioProgress = document.getElementById('audioProgress');
+
+// Load voices - critical for mobile
+function loadVoices() {
+    voices = speechSynthesis.getVoices();
+    if (voices.length > 0) {
+        voicesLoaded = true;
+        console.log('Voices loaded:', voices.length);
+    }
+}
+
+// Load voices on page load and when they change
+loadVoices();
+if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = loadVoices;
+}
 
 // Get all readable content
 function getReadableContent() {
@@ -125,25 +142,38 @@ function getReadableContent() {
 
 // Initialize audio
 audioToggle.addEventListener('click', () => {
+    // Ensure voices are loaded (important for mobile)
+    if (!voicesLoaded) {
+        loadVoices();
+    }
+    
     audioPlayer.classList.toggle('active');
     audioToggle.classList.toggle('active');
     
     if (audioPlayer.classList.contains('active') && !currentText) {
         currentText = getReadableContent();
-        audioStatus.textContent = 'Ready to read - Click play to start';
+        audioStatus.textContent = 'Ready to read - Tap play to start';
     }
 });
 
 // Play/Pause functionality
 playPauseBtn.addEventListener('click', () => {
+    // Ensure voices are loaded
+    if (!voicesLoaded) {
+        loadVoices();
+    }
+    
     if (!isReading) {
+        // Start reading
+        audioStatus.textContent = 'Starting...';
         startReading();
     } else {
+        // Pause/Resume
         if (speechSynthesis.paused) {
             speechSynthesis.resume();
             playPauseBtn.innerHTML = '<span class="play-icon">⏸️</span>';
             audioStatus.textContent = 'Reading...';
-        } else {
+        } else if (speechSynthesis.speaking) {
             speechSynthesis.pause();
             playPauseBtn.innerHTML = '<span class="play-icon">▶️</span>';
             audioStatus.textContent = 'Paused';
@@ -168,25 +198,131 @@ function startReading() {
         currentText = getReadableContent();
     }
     
+    // Cancel any ongoing speech
     if (speechSynthesis.speaking) {
         speechSynthesis.cancel();
     }
     
-    currentUtterance = new SpeechSynthesisUtterance(currentText);
+    // Ensure voices are loaded (critical for mobile)
+    if (!voicesLoaded || voices.length === 0) {
+        voices = speechSynthesis.getVoices();
+        voicesLoaded = voices.length > 0;
+    }
+    
+    // For mobile: split into smaller chunks to avoid timeout
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const maxLength = isMobile ? 200 : 500; // Shorter chunks for mobile
+    
+    if (currentText.length > maxLength) {
+        // Split into sentences
+        const sentences = currentText.match(/[^.!?]+[.!?]+/g) || [currentText];
+        speakInChunks(sentences, 0);
+    } else {
+        speakText(currentText);
+    }
+}
+
+function speakInChunks(sentences, index) {
+    if (index >= sentences.length) {
+        // Finished reading all chunks
+        isReading = false;
+        playPauseBtn.innerHTML = '<span class="play-icon">▶️</span>';
+        playPauseBtn.classList.remove('playing');
+        audioStatus.textContent = 'Finished reading';
+        audioProgress.style.width = '100%';
+        setTimeout(() => {
+            audioProgress.style.width = '0%';
+        }, 2000);
+        return;
+    }
+    
+    const text = sentences[index].trim();
+    if (!text) {
+        speakInChunks(sentences, index + 1);
+        return;
+    }
+    
+    currentUtterance = new SpeechSynthesisUtterance(text);
     
     // Configure voice settings
     currentUtterance.rate = 1.0;
     currentUtterance.pitch = 1.0;
     currentUtterance.volume = 1.0;
+    currentUtterance.lang = 'en-US';
     
-    // Try to use a good English voice
-    const voices = speechSynthesis.getVoices();
-    const englishVoice = voices.find(voice => 
-        voice.lang.startsWith('en') && (voice.name.includes('Google') || voice.name.includes('Microsoft'))
-    ) || voices.find(voice => voice.lang.startsWith('en'));
+    // Select best voice for mobile
+    if (voices.length > 0) {
+        // Priority: Google > Microsoft > Apple > Default
+        const englishVoice = voices.find(voice => 
+            voice.lang.startsWith('en') && 
+            (voice.name.includes('Google') || voice.name.includes('Samantha') || voice.name.includes('Microsoft'))
+        ) || voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+        
+        if (englishVoice) {
+            currentUtterance.voice = englishVoice;
+        }
+    }
     
-    if (englishVoice) {
-        currentUtterance.voice = englishVoice;
+    // Event handlers
+    currentUtterance.onstart = () => {
+        if (index === 0) {
+            isReading = true;
+            playPauseBtn.innerHTML = '<span class="play-icon">⏸️</span>';
+            playPauseBtn.classList.add('playing');
+            audioStatus.textContent = 'Reading...';
+            audioToggle.classList.add('active');
+        }
+        
+        // Update progress
+        const percentage = ((index + 1) / sentences.length) * 100;
+        audioProgress.style.width = percentage + '%';
+    };
+    
+    currentUtterance.onend = () => {
+        // Continue to next chunk
+        speakInChunks(sentences, index + 1);
+    };
+    
+    currentUtterance.onerror = (event) => {
+        console.error('Speech synthesis error:', event);
+        // Try to continue with next chunk
+        if (event.error !== 'interrupted') {
+            audioStatus.textContent = 'Error - Continuing...';
+            setTimeout(() => {
+                speakInChunks(sentences, index + 1);
+            }, 500);
+        }
+    };
+    
+    // Speak this chunk
+    try {
+        speechSynthesis.speak(currentUtterance);
+    } catch (error) {
+        console.error('Error speaking:', error);
+        audioStatus.textContent = 'Audio not supported on this device';
+        stopReading();
+    }
+}
+
+function speakText(text) {
+    currentUtterance = new SpeechSynthesisUtterance(text);
+    
+    // Configure voice settings
+    currentUtterance.rate = 1.0;
+    currentUtterance.pitch = 1.0;
+    currentUtterance.volume = 1.0;
+    currentUtterance.lang = 'en-US';
+    
+    // Select best voice
+    if (voices.length > 0) {
+        const englishVoice = voices.find(voice => 
+            voice.lang.startsWith('en') && 
+            (voice.name.includes('Google') || voice.name.includes('Samantha') || voice.name.includes('Microsoft'))
+        ) || voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+        
+        if (englishVoice) {
+            currentUtterance.voice = englishVoice;
+        }
     }
     
     // Event handlers
@@ -216,24 +352,31 @@ function startReading() {
         stopReading();
     };
     
-    // Simulate progress (since we can't get real progress easily)
-    const estimatedDuration = (currentText.length / 15) * 1000; // Rough estimate
-    let progress = 0;
-    const progressInterval = setInterval(() => {
-        if (!isReading || speechSynthesis.paused) {
-            clearInterval(progressInterval);
-            return;
-        }
-        progress += 1;
-        const percentage = Math.min((progress / (estimatedDuration / 100)), 100);
-        audioProgress.style.width = percentage + '%';
+    // Speak
+    try {
+        speechSynthesis.speak(currentUtterance);
         
-        if (percentage >= 100) {
-            clearInterval(progressInterval);
-        }
-    }, 100);
-    
-    speechSynthesis.speak(currentUtterance);
+        // Simulate progress
+        const estimatedDuration = (text.length / 15) * 1000;
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            if (!isReading || speechSynthesis.paused) {
+                clearInterval(progressInterval);
+                return;
+            }
+            progress += 1;
+            const percentage = Math.min((progress / (estimatedDuration / 100)), 100);
+            audioProgress.style.width = percentage + '%';
+            
+            if (percentage >= 100) {
+                clearInterval(progressInterval);
+            }
+        }, 100);
+    } catch (error) {
+        console.error('Error speaking:', error);
+        audioStatus.textContent = 'Audio not supported on this device';
+        stopReading();
+    }
 }
 
 function stopReading() {
@@ -247,10 +390,18 @@ function stopReading() {
     audioProgress.style.width = '0%';
 }
 
-// Load voices when available
-speechSynthesis.addEventListener('voiceschanged', () => {
-    const voices = speechSynthesis.getVoices();
-    console.log('Available voices:', voices.length);
+// Ensure voices are loaded on mobile (iOS Safari fix)
+window.addEventListener('load', () => {
+    // Force voice loading
+    setTimeout(() => {
+        loadVoices();
+        // iOS Safari workaround
+        if (speechSynthesis.getVoices().length === 0) {
+            const utterance = new SpeechSynthesisUtterance('');
+            speechSynthesis.speak(utterance);
+            speechSynthesis.cancel();
+        }
+    }, 100);
 });
 
 // Mobile Menu Toggle
