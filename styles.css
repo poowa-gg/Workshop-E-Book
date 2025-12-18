@@ -187,6 +187,12 @@ body {
     height: 70px;
 }
 
+.nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
 .nav-brand {
     display: flex;
     align-items: center;
@@ -280,11 +286,141 @@ body {
     white-space: nowrap;
 }
 
+/* Audio Toggle Button */
+.audio-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(255, 167, 38, 0.3);
+}
+
+.audio-toggle:hover {
+    background: #ff9800;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 167, 38, 0.4);
+}
+
+.audio-toggle.active {
+    background: var(--primary-color);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.audio-icon {
+    font-size: 1.2rem;
+}
+
+.audio-text {
+    display: none;
+}
+
+/* Audio Player Panel */
+.audio-player {
+    position: fixed;
+    bottom: -100px;
+    left: 0;
+    right: 0;
+    background: white;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 999;
+    transition: bottom 0.3s ease;
+}
+
+.audio-player.active {
+    bottom: 0;
+}
+
+.audio-controls-panel {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.audio-btn {
+    background: var(--bg-light);
+    border: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.audio-btn:hover {
+    background: var(--primary-color);
+    transform: scale(1.1);
+}
+
+.audio-btn:hover span {
+    filter: brightness(0) invert(1);
+}
+
+.audio-btn.playing {
+    background: var(--primary-color);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.audio-btn.playing span {
+    filter: brightness(0) invert(1);
+}
+
+.audio-close {
+    background: #f44336;
+    color: white;
+    margin-left: auto;
+}
+
+.audio-close:hover {
+    background: #d32f2f;
+}
+
+.audio-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.audio-status {
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.audio-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--bg-light);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.audio-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
 /* Main Content */
 main {
     background: white;
     margin: 40px auto;
-    padding: 60px 20px;
+    padding: 60px 20px 80px;
     box-shadow: var(--shadow-lg);
     border-radius: 10px;
 }
@@ -595,6 +731,166 @@ h4 {
     margin-top: 0;
 }
 
+/* Purpose Section */
+.purpose-section {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 50px 40px;
+    border-radius: 15px;
+    margin-bottom: 60px;
+}
+
+.purpose-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.purpose-icon {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 20px;
+}
+
+.purpose-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.8rem;
+    color: var(--text-dark);
+    margin: 0;
+}
+
+.purpose-lead {
+    font-size: 1.3rem;
+    line-height: 1.8;
+    color: var(--text-dark);
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto 50px;
+    font-weight: 400;
+}
+
+.purpose-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.purpose-card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+}
+
+.purpose-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.purpose-card-icon {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 15px;
+}
+
+.purpose-card h3 {
+    color: var(--primary-color);
+    font-size: 1.4rem;
+    margin: 0 0 15px 0;
+}
+
+.purpose-card p {
+    color: var(--text-light);
+    font-size: 1rem;
+    line-height: 1.7;
+    margin: 0;
+}
+
+.workshop-info-box {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 35px;
+    border-radius: 12px;
+    margin: 40px 0;
+    box-shadow: var(--shadow-lg);
+}
+
+.workshop-info-box h3 {
+    color: white;
+    margin: 0 0 15px 0;
+    font-size: 1.8rem;
+}
+
+.workshop-info-box p {
+    margin-bottom: 15px;
+    font-size: 1.05rem;
+    line-height: 1.7;
+}
+
+.workshop-cta-inline {
+    margin-top: 25px;
+}
+
+.inline-whatsapp-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: #25D366;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-size: 1.05rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
+}
+
+.inline-whatsapp-btn:hover {
+    background: #20BA5A;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.6);
+}
+
+.inline-whatsapp-btn span:first-child {
+    font-size: 1.5rem;
+}
+
+.reading-tips {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    border-left: 5px solid var(--accent-color);
+}
+
+.reading-tips h4 {
+    color: var(--primary-color);
+    margin: 0 0 20px 0;
+    font-size: 1.3rem;
+}
+
+.reading-tips ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.reading-tips li {
+    padding: 12px 0 12px 35px;
+    position: relative;
+    line-height: 1.7;
+    color: var(--text-dark);
+}
+
+.reading-tips li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--accent-color);
+    font-weight: bold;
+    font-size: 1.3rem;
+}
+
 /* CTA Section */
 .cta-section {
     background: linear-gradient(135deg, #1e3c72 0%, #2E7D32 100%);
@@ -763,6 +1059,10 @@ footer {
     .nav-link {
         padding: 10px 12px;
     }
+    
+    .audio-text {
+        display: inline;
+    }
 }
 
 @media (max-width: 768px) {
@@ -773,6 +1073,69 @@ footer {
     .nav-toggle {
         display: flex;
         z-index: 1001;
+    }
+    
+    .audio-toggle {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+    
+    .audio-text {
+        display: none;
+    }
+    
+    .audio-controls-panel {
+        padding: 12px 15px;
+        gap: 10px;
+    }
+    
+    .audio-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .audio-status {
+        font-size: 0.85rem;
+    }
+    
+    .purpose-section {
+        padding: 35px 25px;
+    }
+    
+    .purpose-icon {
+        font-size: 3rem;
+    }
+    
+    .purpose-header h2 {
+        font-size: 2rem;
+    }
+    
+    .purpose-lead {
+        font-size: 1.1rem;
+    }
+    
+    .purpose-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .purpose-card {
+        padding: 25px;
+    }
+    
+    .workshop-info-box {
+        padding: 25px 20px;
+    }
+    
+    .inline-whatsapp-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 15px 20px;
+    }
+    
+    .reading-tips {
+        padding: 25px 20px;
     }
     
     .nav-menu {
@@ -945,6 +1308,70 @@ footer {
     
     .brand-icon {
         font-size: 1.5rem;
+    }
+    
+    .audio-toggle {
+        padding: 8px 10px;
+    }
+    
+    .audio-icon {
+        font-size: 1.1rem;
+    }
+    
+    .audio-controls-panel {
+        gap: 8px;
+        padding: 10px;
+    }
+    
+    .audio-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 0.9rem;
+    }
+    
+    .audio-status {
+        font-size: 0.8rem;
+    }
+    
+    .purpose-section {
+        padding: 25px 15px;
+    }
+    
+    .purpose-icon {
+        font-size: 2.5rem;
+    }
+    
+    .purpose-header h2 {
+        font-size: 1.6rem;
+    }
+    
+    .purpose-lead {
+        font-size: 1rem;
+    }
+    
+    .purpose-card {
+        padding: 20px;
+    }
+    
+    .purpose-card-icon {
+        font-size: 2rem;
+    }
+    
+    .workshop-info-box {
+        padding: 20px 15px;
+    }
+    
+    .workshop-info-box h3 {
+        font-size: 1.4rem;
+    }
+    
+    .inline-whatsapp-btn {
+        font-size: 0.95rem;
+        padding: 12px 20px;
+    }
+    
+    .reading-tips {
+        padding: 20px 15px;
     }
     
     .feature-card,

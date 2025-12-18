@@ -89,6 +89,170 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
+// Text-to-Speech Audio Feature
+let speechSynthesis = window.speechSynthesis;
+let currentUtterance = null;
+let isReading = false;
+let currentText = '';
+
+const audioToggle = document.getElementById('audioToggle');
+const audioPlayer = document.getElementById('audioPlayer');
+const playPauseBtn = document.getElementById('playPauseBtn');
+const stopBtn = document.getElementById('stopBtn');
+const audioClose = document.getElementById('audioClose');
+const audioStatus = document.getElementById('audioStatus');
+const audioProgress = document.getElementById('audioProgress');
+
+// Get all readable content
+function getReadableContent() {
+    const content = document.querySelector('.ebook-content');
+    if (!content) return '';
+    
+    // Clone the content to manipulate
+    const clone = content.cloneNode(true);
+    
+    // Remove elements we don't want to read
+    clone.querySelectorAll('.chapter-label, .chapter-num, .nav-link').forEach(el => el.remove());
+    
+    // Get text content
+    let text = clone.textContent;
+    
+    // Clean up the text
+    text = text.replace(/\s+/g, ' ').trim();
+    
+    return text;
+}
+
+// Initialize audio
+audioToggle.addEventListener('click', () => {
+    audioPlayer.classList.toggle('active');
+    audioToggle.classList.toggle('active');
+    
+    if (audioPlayer.classList.contains('active') && !currentText) {
+        currentText = getReadableContent();
+        audioStatus.textContent = 'Ready to read - Click play to start';
+    }
+});
+
+// Play/Pause functionality
+playPauseBtn.addEventListener('click', () => {
+    if (!isReading) {
+        startReading();
+    } else {
+        if (speechSynthesis.paused) {
+            speechSynthesis.resume();
+            playPauseBtn.innerHTML = '<span class="play-icon">⏸️</span>';
+            audioStatus.textContent = 'Reading...';
+        } else {
+            speechSynthesis.pause();
+            playPauseBtn.innerHTML = '<span class="play-icon">▶️</span>';
+            audioStatus.textContent = 'Paused';
+        }
+    }
+});
+
+// Stop functionality
+stopBtn.addEventListener('click', () => {
+    stopReading();
+});
+
+// Close audio player
+audioClose.addEventListener('click', () => {
+    stopReading();
+    audioPlayer.classList.remove('active');
+    audioToggle.classList.remove('active');
+});
+
+function startReading() {
+    if (!currentText) {
+        currentText = getReadableContent();
+    }
+    
+    if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+    }
+    
+    currentUtterance = new SpeechSynthesisUtterance(currentText);
+    
+    // Configure voice settings
+    currentUtterance.rate = 1.0;
+    currentUtterance.pitch = 1.0;
+    currentUtterance.volume = 1.0;
+    
+    // Try to use a good English voice
+    const voices = speechSynthesis.getVoices();
+    const englishVoice = voices.find(voice => 
+        voice.lang.startsWith('en') && (voice.name.includes('Google') || voice.name.includes('Microsoft'))
+    ) || voices.find(voice => voice.lang.startsWith('en'));
+    
+    if (englishVoice) {
+        currentUtterance.voice = englishVoice;
+    }
+    
+    // Event handlers
+    currentUtterance.onstart = () => {
+        isReading = true;
+        playPauseBtn.innerHTML = '<span class="play-icon">⏸️</span>';
+        playPauseBtn.classList.add('playing');
+        audioStatus.textContent = 'Reading...';
+        audioToggle.classList.add('active');
+    };
+    
+    currentUtterance.onend = () => {
+        isReading = false;
+        playPauseBtn.innerHTML = '<span class="play-icon">▶️</span>';
+        playPauseBtn.classList.remove('playing');
+        audioStatus.textContent = 'Finished reading';
+        audioProgress.style.width = '100%';
+        
+        setTimeout(() => {
+            audioProgress.style.width = '0%';
+        }, 2000);
+    };
+    
+    currentUtterance.onerror = (event) => {
+        console.error('Speech synthesis error:', event);
+        audioStatus.textContent = 'Error occurred - Please try again';
+        stopReading();
+    };
+    
+    // Simulate progress (since we can't get real progress easily)
+    const estimatedDuration = (currentText.length / 15) * 1000; // Rough estimate
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        if (!isReading || speechSynthesis.paused) {
+            clearInterval(progressInterval);
+            return;
+        }
+        progress += 1;
+        const percentage = Math.min((progress / (estimatedDuration / 100)), 100);
+        audioProgress.style.width = percentage + '%';
+        
+        if (percentage >= 100) {
+            clearInterval(progressInterval);
+        }
+    }, 100);
+    
+    speechSynthesis.speak(currentUtterance);
+}
+
+function stopReading() {
+    if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+    }
+    isReading = false;
+    playPauseBtn.innerHTML = '<span class="play-icon">▶️</span>';
+    playPauseBtn.classList.remove('playing');
+    audioStatus.textContent = 'Stopped';
+    audioProgress.style.width = '0%';
+}
+
+// Load voices when available
+speechSynthesis.addEventListener('voiceschanged', () => {
+    const voices = speechSynthesis.getVoices();
+    console.log('Available voices:', voices.length);
+});
+
 // Mobile Menu Toggle
 const navToggle = document.getElementById('navToggle');
 const navMenu = document.getElementById('navMenu');
